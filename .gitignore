@@ -1,0 +1,11 @@
+.idea/
+
+**/arcpkg
+eva/*
+!eva/Makefile
+!eva/playground.c
+
+valgrind.xml
+
+/cmake-build-release/
+/cmake-build-debug/
