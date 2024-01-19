@@ -26,7 +26,7 @@ This program is under very early stage, and you may encounter bugs
 
 [^1]: After enabling force mode, the program will disable prompts when overwriting `songlist` and background images
 [^2]: Some charts are packed without a specific chart constant but a sting like "Future 10", we cannot detect the proper constant from this
-since some charters may fill "Eternity 12" and so on into it... By enabling this option, the program will
+since some charters may fill "Eternity 12" and so on into it... By enabling this option, the program will use 1.0 as chart constant for them
 
 ## Building
 
