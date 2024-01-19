@@ -5,7 +5,7 @@
 
 # Étoile
 
-A mini tool written in C that helps convert `.arcpkg` to Arcaea readable `songlist`.
+A mini tool written in C that helps convert `.arcpkg` to Arcaea readable `songlist`
 
 ## Problem
 
