@@ -61,7 +61,9 @@ Native development libraries version:
 4. Make sure you have CMake installed:
 
    ```shell
-   $ cmake --build cmake-build-debug --target Etoile
+   $ mkdir build && cd build
+   $ cmake -DCMAKE_BUILD_TYPE=Release ..
+   $ make
    ```
 
 ## Roadmap & Plans
