@@ -34,11 +34,13 @@ since some charters may fill "Eternity 12" and so on into it... By enabling this
 
 Native development libraries version:
 
-| library       | version                               |
-|:--------------|:--------------------------------------|
-| libcyaml      | 1.3.1                                 |
-| cJSON         | 1.7.15                                |
-| libmagickwand | 8:6.9.11.60+dfsg-1.6 (from debian 12) |
+| library       | version                   |
+|:--------------|:--------------------------|
+| libcyaml      | 1.3.1                     |
+| cJSON         | 1.7.15                    |
+| libmagickwand | 8:6.9.11.60+dfsg-1.6 [^1] |
+
+[^1]: from debian 12
 
 1. Install [`libcyaml`](https://github.com/tlsa/libcyaml):
 
