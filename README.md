@@ -1,7 +1,5 @@
 <h5 align="right"> 💫 </h5>
-<img src="https://arcaea.lowiro.com/img/11_icon.d91d4854.png" align="right" />
-
----
+<img width="48" height="48" src="https://arcaea.lowiro.com/img/11_icon.d91d4854.png" align="right" />
 
 # Étoile
 
