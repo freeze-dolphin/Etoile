@@ -92,6 +92,8 @@ local flag_property = false;
 
 local available_sc_commands = { "trackhide", "trackshow", "trackdisplay", "redline", "arcahvdistort", "arcahvdebris", "hidegroup", "enwidencamera", "enwidenlanes" }
 
+local invalid_cmd = "###invalid###";
+
 local function process(cmd)
     if not flag_property then
         if (cmd == "-") then
@@ -104,7 +106,7 @@ local function process(cmd)
     if procedure == "scenecontrol" then
         local args, detrim_count = break_cmd(procedure, cmd);
         if not table.contain(available_sc_commands, args[2]) then
-            return "";
+            return invalid_cmd;
         end
 
         if args[2] == "hidegroup" then
@@ -125,5 +127,15 @@ end
 
 function exec(aff)
     local cmds = split(aff, '\n');
-    return table.concat(table.map(cmds, process), "\n");
+    local result = table.concat(table.map(cmds, process), "\n");
+
+    local i = 1;
+    while i <= #result do
+        if result[i] == invalid_cmd then
+            table.remove(result, i);
+        else
+            i = i + 1;
+        end
+    end
+    return result;
 end
