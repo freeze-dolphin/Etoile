@@ -5,10 +5,17 @@
 #include <cjson/cJSON.h>
 #include <zip.h>
 #include <wand/MagickWand.h>
+#include <lua5.4/lua.h>
+#include <lua5.4/lauxlib.h>
+#include <lua5.4/lualib.h>
+
+#define DEBUG
 
 int main(int argc, char *argv[]) {
     const char *path_arcpkg = NULL, *path_songs_dir = NULL, *path_bg_dir = NULL, *s_packname = NULL, *s_version = NULL;
+    char *path_lua = NULL;
     bool flag_dbg = false, flag_force = false, flag_auto_fix_constant = false;
+    bool flag_lua = true;
 
     char *s_addition_version = "1.0";
 
@@ -28,6 +35,9 @@ int main(int argc, char *argv[]) {
             case 'p':
                 s_packname = cag_option_get_value(&context);
                 break;
+            case 'l':
+                path_lua = (char *) cag_option_get_value(&context);
+                break;
             case 'v':
                 s_version = cag_option_get_value(&context);
                 break;
@@ -46,50 +56,58 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (s_version != NULL) {
-        s_addition_version = calloc(sizeof(char), strlen(s_version) + 1);
-        strcpy(s_addition_version, s_version);
-    }
-
     int param_index = cag_option_get_index(&context);
     if (param_index < argc) {
-        fprintf(stderr, "[ERROR] Arguments did not match\n");
         print_help_msg(false);
-        return EXIT_SUCCESS;
+        STDERR_ONLY_AND_EXIT("[ERROR] Arguments did not match\n")
     }
 
     // validation
 
     if (path_arcpkg == NULL || path_songs_dir == NULL || path_bg_dir == NULL || s_packname == NULL) {
-        fprintf(stderr, "[ERROR] Required arguments did not met\n");
         print_help_msg(false);
-        return EXIT_SUCCESS;
-    }
-
-    if (!is_endwith(path_arcpkg, ".arcpkg")) {
-        fprintf(stderr, "[ERROR] An .arcpkg file is required\n");
-        print_help_msg(false);
-        return EXIT_SUCCESS;
+        STDERR_ONLY_AND_EXIT("[ERROR] Required arguments did not met\n")
     }
 
     char *path_songlist = calloc(sizeof(char), strlen(path_songs_dir) + 10);
     sprintf(path_songlist, "%s/songlist", path_songs_dir);
 
+    if (!is_file_exist((char *) path_songs_dir)) {
+        bool mkdir_err = make_dir(path_songs_dir);
+        if (mkdir_err) {
+            STDERR_ONLY_AND_EXIT("[ERROR] Failed to create dir '%s'\n", path_songs_dir)
+        }
+    }
+
     char *path_log = calloc(sizeof(char), strlen(path_songs_dir) + 12);
     sprintf(path_log, "%s/etoile.log", path_songs_dir);
     FILE *log_file = fopen(path_log, "w");
 
-    if (!is_file_exist((char *) path_songs_dir)) {
-        bool mkdir_err = make_dir(path_songs_dir);
-        if (mkdir_err) {
-            fprintf(stderr, "[ERROR] Failed to create dir '%s'\n", path_songs_dir);
-            return EXIT_FAILURE;
+    if (s_version != NULL && strlen(s_version) != 0) {
+        s_addition_version = calloc(sizeof(char), strlen(s_version) + 1);
+        strcpy(s_addition_version, s_version);
+    }
+
+    if (path_lua == NULL) { // handle the situation that the user didn't pass scm arg
+        char *path_default_scm = "./aff_proc.lua";
+        if (is_file_exist(path_default_scm)) {
+            path_lua = calloc(sizeof(char), strlen(path_default_scm) + 1);
+            VALIDATION_ALLOC(path_lua)
+            strcpy(path_lua, path_default_scm);
+        } else {
+            // disable scm custom processing
+            flag_lua = false;
         }
     }
 
+    if (!is_endwith(path_arcpkg, ".arcpkg")) {
+        print_help_msg(false);
+        ERR_AND_EXIT("[ERROR] An .arcpkg file is required\n")
+    }
+
+
     if (!is_file_exist((char *) path_bg_dir)) {
-        fprintf(stderr, "[ERROR] Unable to locate bg dir '%s'\n", path_bg_dir);
-        return EXIT_FAILURE;
+        ERR_AND_EXIT("[ERROR] Unable to locate bg dir '%s'\n", path_bg_dir)
     }
 
     FILE *f_songlist = NULL;
@@ -111,9 +129,8 @@ int main(int argc, char *argv[]) {
         write_songlist:
         f_songlist = fopen(path_songlist, "w");
         if (f_songlist == NULL) {
-            fprintf(stderr, "[ERROR] Cannot create file 'songlist'\n");
             fclose(f_songlist);
-            return EXIT_FAILURE;
+            ERR_AND_EXIT("[ERROR] Cannot create file 'songlist'\n")
         }
         fclose(f_songlist);
     }
@@ -121,12 +138,37 @@ int main(int argc, char *argv[]) {
     f_songlist = fopen(path_songlist, "r+");
 
     if (f_songlist == NULL) {
-        fprintf(stderr, "[ERROR] Cannot open file 'songlist'\n");
         fclose(f_songlist);
-        return EXIT_FAILURE;
+        ERR_AND_EXIT("[ERROR] Cannot open file 'songlist'\n")
     }
 
     // init
+
+    lua_State *L;
+    double lua_file_ver = 1.0;
+
+    if (flag_lua) {
+        L = luaL_newstate();
+        luaL_openlibs(L);
+
+        if (luaL_dofile(L, path_lua) != LUA_OK) {
+            ERR_AND_EXIT("[ERROR] Cannot load lua script: %s\n", lua_tostring(L, -1))
+        }
+
+        lua_getglobal(L, "version");
+        if (lua_isnil(L, -1)) {
+            goto undefined_file_ver;
+        } else {
+            if (lua_isnumber(L, -1)) {
+                lua_file_ver = lua_tonumber(L, -1);
+            } else {
+                undefined_file_ver:
+                fprintf(log_file,
+                        "[WARN] Specific double field 'version' not found in '%s', using '1.0' by default\n", path_lua);
+            }
+        }
+        lua_pop(L, 1);
+    }
 
     char formatted_time[20];
     time_t cur_time = get_current_time(formatted_time);
@@ -141,11 +183,9 @@ int main(int argc, char *argv[]) {
     cJSON_AddItemToObject(json_songlist, "songs", json_songs);
 
     // open arcpkg
-
-    unsigned char *s_index_yml = NULL;
-
     struct zip_t *zip = zip_open(path_arcpkg, ZIP_DEFAULT_COMPRESSION_LEVEL, 'r');
 
+    unsigned char *s_index_yml = NULL;
     { // open 'index.yml'
         size_t bufsize;
         zip_entry_open(zip, "index.yml");
@@ -250,7 +290,8 @@ int main(int argc, char *argv[]) {
 
                     int rating_class = atoi(chart_path); // NOLINT(*-err34-c)
                     if (!isdigit(chart_path[0]) || 0 > rating_class || 3 < rating_class) {
-                        fprintf(stderr, "[ERROR] Cannot detect chart rating class for '%s' (from '%s'), ignored\n", chart_path, c_id);
+                        fprintf(stderr, "[ERROR] Cannot detect chart rating class for '%s' (from '%s'), ignored\n", chart_path,
+                                c_id);
                         aborted = true;
                         continue;
                     }
@@ -332,12 +373,13 @@ int main(int argc, char *argv[]) {
                         if (!bg_null) { // extract bg
                             if (is_file_exist(out_bg_path)) { // warn the user
                                 if (!flag_force) {
-                                    printf("Background img '%s' (from '%s') has existed in your bg dir, overwrite? (Y/N): ", bg_snake,
+                                    printf("Background img '%s' (from '%s') has existed in your bg dir, overwrite? (Y/N): ",
+                                           bg_snake,
                                            c_id);
                                     char resp;
                                     scanf("%c", &resp);
                                     getchar();
-                                    if (resp != 'y' && resp != 'Y') goto skip_bg_extract;
+                                    if (resp != 'y' && resp != 'Y') goto after_bg_extract;
                                 } else {
                                     fprintf(log_file, "[INFO] Overwriting background img '%s' (from '%s')\n", bg_snake, c_id);
                                 }
@@ -347,12 +389,51 @@ int main(int argc, char *argv[]) {
                             zip_entry_close(zip);
                         }
 
-                        skip_bg_extract:
+                        after_bg_extract:
+
+
                         { // extract chart
+                            if (!flag_lua) {
+                                zip_entry_open(zip, proj_chart_path);
+                                zip_entry_fread(zip, out_chart_path);
+                                zip_entry_close(zip);
+                                goto after_chart_extract;
+                            }
+
+                            unsigned char *s_aff;
+                            size_t bufsize;
+
                             zip_entry_open(zip, proj_chart_path);
-                            zip_entry_fread(zip, out_chart_path);
+                            bufsize = zip_entry_size(zip);
+                            s_aff = calloc(sizeof(unsigned char), bufsize + 1);
+                            zip_entry_noallocread(zip, (void *) s_aff, bufsize);
                             zip_entry_close(zip);
+
+                            if (lua_file_ver <= 1.0) {
+                                lua_getglobal(L, "exec");
+                                if (lua_isnil(L, -1)) {
+                                    ERR_AND_EXIT("[ERROR] Cannot process aff: specific func 'exec' not found\n")
+                                }
+
+                                lua_pushstring(L, (const char *) s_aff);
+
+                                if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
+                                    ERR_AND_EXIT("[ERROR] Cannot process aff: %s\n", lua_tostring(L, -1))
+                                }
+
+                                if (lua_isstring(L, -1)) {
+                                    const char *proced_aff = lua_tostring(L, -1);
+                                    FILE *f_out_chart = fopen(out_chart_path, "w");
+                                    fprintf(f_out_chart, "%s", proced_aff);
+                                } else {
+                                    ERR_AND_EXIT("[ERROR] Cannot process aff: The return value of the function is not a string\n")
+                                }
+
+                                lua_pop(L, 1);
+                            }
                         }
+
+                        after_chart_extract:
 
                         { // extract audio
                             zip_entry_open(zip, proj_audio_path);
@@ -388,8 +469,8 @@ int main(int argc, char *argv[]) {
         }
     }
     zip_close(zip);
-
     fclose(log_file);
+    if (flag_lua) lua_close(L);
 
     char *songlist_rst = cJSON_Print(json_songlist);
     fwrite(songlist_rst, sizeof(char), strlen(songlist_rst), f_songlist);

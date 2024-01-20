@@ -30,8 +30,14 @@ static struct cag_option options[] = {
         {.identifier = 'p',
                 .access_letters = "p",
                 .access_name = "pack",
-                .value_name = "PACKNAME",
+                .value_name = "PACK",
                 .description = "Name of target pack\t<REQUIRED>"},
+
+        {.identifier = 'l',
+                .access_letters = "l",
+                .access_name = "lua",
+                .value_name = "LUA",
+                .description = "Path to lua script to be applied on aff"},
 
         {.identifier = 'v',
                 .access_letters = "v",

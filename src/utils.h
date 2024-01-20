@@ -18,6 +18,15 @@
 
 #define DBG_I(str, i) if (flag_dbg) printf("[DEBUG] %d: %s\n", i, str);
 
+#define ERR_AND_EXIT(...) \
+fprintf(stderr, __VA_ARGS__); \
+fprintf(log_file, __VA_ARGS__); \
+exit(EXIT_FAILURE);
+
+#define STDERR_ONLY_AND_EXIT(...) \
+fprintf(stderr, __VA_ARGS__); \
+exit(EXIT_FAILURE);
+
 #define VALIDATION_ALLOC(ptr) \
 if (ptr == NULL) { \
     fprintf(stderr, "Failed to allocate memory\n"); \
@@ -93,3 +102,5 @@ int get_terminal_width();
 char *progress_formatter(unsigned int ety_len);
 
 #endif //ETOILE_UTILS_H
+
+#pragma clang diagnostic pop

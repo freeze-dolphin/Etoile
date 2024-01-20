@@ -48,6 +48,9 @@ pkg_check_modules(cjson REQUIRED IMPORTED_TARGET libcjson)
 ## MagickWand
 pkg_check_modules(MAGICKWAND REQUIRED IMPORTED_TARGET MagickWand)
 
+## lua
+pkg_check_modules(LUA REQUIRED IMPORTED_TARGET lua-5.4)
+
 # define exec
 add_executable(Etoile
         src/main.c
@@ -59,7 +62,7 @@ add_executable(Etoile
         src/schem_proj.h)
 
 # link lib
-target_link_libraries(Etoile m)
+target_link_libraries(Etoile m) # Math
 target_link_libraries(Etoile cargs)
 target_link_libraries(Etoile zip)
 target_link_libraries(Etoile cjson)
@@ -67,6 +70,9 @@ target_link_libraries(Etoile cyaml)
 target_link_libraries(Etoile ${MAGICKWAND_LIBRARIES})
 target_include_directories(Etoile PUBLIC ${MAGICKWAND_INCLUDE_DIRS})
 target_compile_options(Etoile PUBLIC ${MAGICKWAND_CFLAGS_OTHER})
+target_link_libraries(Etoile ${LUA_LIBRARIES})
+target_include_directories(Etoile PUBLIC ${LUA_INCLUDE_DIRS})
+target_compile_options(Etoile PUBLIC ${LUA_CFLAGS_OTHER})
 
 # playground
 
