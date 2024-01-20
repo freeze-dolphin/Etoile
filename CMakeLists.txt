@@ -35,8 +35,8 @@ FetchContent_MakeAvailable(cargs)
 
 ## zip
 FetchContent_Declare(zip
-        GIT_REPOSITORY https://github.com/freeze-dolphin/zip
-        GIT_TAG b62ca4289301fb65e2cfcd389e2bb298ac0b6d6d)
+        GIT_REPOSITORY https://github.com/kuba--/zip
+        GIT_TAG 550905d883b29f0b23e433fdb97f6299b628d4a9)
 FetchContent_MakeAvailable(zip)
 
 ## libcyaml
