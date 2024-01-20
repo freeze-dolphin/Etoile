@@ -75,7 +75,8 @@ local function break_cmd(procedure, cmd)
         };
 
         if #args == 4 then
-            table.insert(result, tonumber(args[3]))
+            -- the third arg must be float number
+            table.insert(result, string.format("%.2f", tonumber(args[3])))
             table.insert(result, tonumber(args[4]))
         end
 
