@@ -17,7 +17,7 @@ simulate_multiple_valgrind: compile
 	valgrind ../cmake-build-debug/Etoile -i ./arcpkg/ACC5.Standard.arcpkg -o ./songs -b ./img/bg/1080 -p default --force
 
 simulate_lua: compile
-	../cmake-build-debug/Etoile -i ./arcpkg/ACC5.Standard.arcpkg -o ./songs -b ./img/bg/1080 -p default --force --lua ../src/aff_proc.lua
+	../cmake-build-debug/Etoile -i ./arcpkg/ACC5.Standard.arcpkg -o ./songs -b ./img/bg/1080 -p default --force --lua ../src/aff_processor.lua
 
 all: compile
 

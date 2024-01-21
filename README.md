@@ -94,7 +94,7 @@ Native development libraries version:
    $ make
    ```
 
-## Roadmap & Plans
+## Roadmap & TODOs
 
 Plans are divided into different parts according to their stages of execution in the program.
 
@@ -124,17 +124,20 @@ During the conversion
 #### Resources & Structure
 
 - [x] Auto extract chart resources
-- [ ] Log warn while processing charts with scene-control
+- [x] Detect and extract sound effects of arctaps
+- [ ] Some arcpkgs names 'base.ogg' as 'audio.ogg', we just simply ignore them and warn the user about it
 - [ ] [TODO 1] If PST, PRS and BYD use the same audio / jacket, they should use 'base' as audio / jacket (currently, the program will
   copy `base.ogg` / `base.jpg` and rename it to `0.ogg` etc. if there is PST chart)
 
 #### Chart
 
 - [x] Custom Lua script support for aff preprocessing
-- [ ] Optimize Lua processing, split the single Lua script into Prelude (define basic func etc.) and Core (where our `exec` func locates),
-  so that we don't need to define util-functions for every aff
 - [ ] Ask for user's response when encountering undetectable chart difficulty
 - [ ] [TODO 2] or we could make a converter for those charts without a chart constant, which converts "Future 10" to chart constant 10.0
+
+##### Lua
+
+- [ ] Restrict some parameters to be '%.2f' formatted
 
 ### Outputting
 

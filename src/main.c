@@ -4,10 +4,10 @@
 
 #include <cjson/cJSON.h>
 #include <zip.h>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 #include <wand/MagickWand.h>
-#include <lua5.4/lua.h>
-#include <lua5.4/lauxlib.h>
-#include <lua5.4/lualib.h>
 
 #define DEBUG
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (path_lua == NULL) { // handle the situation that the user didn't pass scm arg
-        char *path_default_scm = "./aff_proc.lua";
+        char *path_default_scm = "./aff_processor.lua";
         if (is_file_exist(path_default_scm)) {
             path_lua = calloc(sizeof(char), strlen(path_default_scm) + 1);
             VALIDATION_ALLOC(path_lua)
@@ -201,16 +201,19 @@ int main(int argc, char *argv[]) {
 
         int i;
         for (i = 0; i < ety_len; i++) {
-            if (ety[i].type != ENTRY_TYPE_LEVEL) continue; // only support level
-
             const char *c_dir = ety[i].directory;
-            char *c_dir_snake = malloc(strlen(c_dir) * sizeof(char) + 1);
             const char *c_id = ety[i].identifier;
+            if (ety[i].type != ENTRY_TYPE_LEVEL) {
+                printf(progress_formatter(ety_len, " Ignoring pack entry '%s'\n"), i + 1, ety_len, c_id);
+                continue; // only support level
+            }
+
+            char *c_dir_snake = malloc(strlen(c_dir) * sizeof(char) + 1);
             const char *c_settings = ety[i].setting_file;
 
-            sprintf(c_dir_snake, "%s", c_dir);
+            strcpy(c_dir_snake, c_dir);
 
-            to_snake_case((char *) c_dir_snake);
+            c_dir_to_snake_case((char *) c_dir_snake);
 
 #ifdef DEBUG
             DBG(c_dir)
@@ -218,7 +221,7 @@ int main(int argc, char *argv[]) {
             DBG(c_settings)
 #endif
 
-            printf(progress_formatter(ety_len), i + 1, ety_len, c_id, path_songs_dir, c_dir_snake);
+            printf(progress_formatter(ety_len, " Working on '%s' (%s/%s)\n"), i + 1, ety_len, c_id, path_songs_dir, c_dir_snake);
 
             char *proj_setting_path = calloc(sizeof(char), strlen(c_dir) + strlen(c_settings) + 2);
             VALIDATION_ALLOC(proj_setting_path)
@@ -262,13 +265,6 @@ int main(int argc, char *argv[]) {
                         to_snake_case((char *) bg_snake);
                     }
 
-#ifdef DEBUG
-                    float cons = proj->charts[j].chart_constant;
-                    double intpart, fracpart = modf(cons, &intpart);
-                    char *constant = malloc(6);
-                    sprintf(constant, "constant: %.1lf + %.1lf", intpart, fracpart);
-                    DBG(constant)
-#endif
                     if (proj->charts[j].chart_constant < 1.0) {
                         if (flag_auto_fix_constant) {
                             // TODO 2
@@ -359,6 +355,9 @@ int main(int argc, char *argv[]) {
                         char *out_audio_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(base_slot) + 6);
                         char *out_jacket_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(base_slot) + 6);
                         char *out_jacket_256_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(base_slot) + 10);
+                        VALIDATION_ALLOC(out_audio_path)
+                        VALIDATION_ALLOC(out_jacket_path)
+                        VALIDATION_ALLOC(out_jacket_256_path)
                         sprintf(out_audio_path, "%s/%s.ogg", out_proj_path, base_slot);
                         sprintf(out_jacket_path, "%s/%s.jpg", out_proj_path, base_slot);
                         sprintf(out_jacket_256_path, "%s/%s_256.jpg", out_proj_path, base_slot);
@@ -439,6 +438,27 @@ int main(int argc, char *argv[]) {
                             zip_entry_open(zip, proj_audio_path);
                             zip_entry_fread(zip, out_audio_path);
                             zip_entry_close(zip);
+                        }
+
+                        { // extract se
+                            char *c_dir_real;
+                            char *se;
+
+                            int length;
+                            for (char **s = get_arctap_se_list(zip, c_dir, &length); length > 0; length--) {
+                                se = strtok((char *) s[length - 1], "/");
+                                char *out_se_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(se) + 2);
+                                VALIDATION_ALLOC(out_se_path)
+                                sprintf(out_se_path, "%s/%s", out_proj_path, se);
+
+                                char *se_path = calloc(sizeof(char), strlen(c_dir) + strlen(se) + 2);
+                                VALIDATION_ALLOC(se_path)
+                                sprintf(se_path, "%s/%s", c_dir, se);
+
+                                zip_entry_open(zip, se_path);
+                                zip_entry_fread(zip, out_se_path);
+                                zip_entry_close(zip);
+                            }
                         }
 
                         { // extract jacket

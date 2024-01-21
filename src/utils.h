@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <cyaml/cyaml.h>
 #include <cjson/cJSON.h>
+#include <zip.h>
 
 #define DBG(str) if (flag_dbg) printf("[DEBUG] %s\n", str);
 
@@ -80,6 +81,8 @@ void trim(char *str);
 
 void to_snake_case(char *str);
 
+void c_dir_to_snake_case(char *str);
+
 char *read_all_from_file(FILE *f);
 
 bool is_endwith(const char *str, char *suf);
@@ -99,8 +102,8 @@ cJSON *gen_song_json(const char *id,
 
 int get_terminal_width();
 
-char *progress_formatter(unsigned int ety_len);
+char *progress_formatter(unsigned int ety_len, const char *extra);
+
+char **get_arctap_se_list(struct zip_t *zip, const char *c_dir, int *length);
 
 #endif //ETOILE_UTILS_H
-
-#pragma clang diagnostic pop

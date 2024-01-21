@@ -75,6 +75,17 @@ void to_snake_case(char *str) {
     }
 }
 
+void c_dir_to_snake_case(char *str) {
+    int i;
+    for (i = 0; i < strlen(str); i++) {
+        if (65 <= str[i] && str[i] <= 90) {
+            str[i] += 0x20;
+        } else if (!isalpha(str[i]) && !isdigit(str[i])) {
+            str[i] = '_';
+        }
+    }
+}
+
 char *read_all_from_file(FILE *f) {
     int size = 1;
     char *s = (char *) malloc(size);
@@ -145,7 +156,7 @@ void *parse_yaml_with_schema(unsigned char *yaml, unsigned int *ety_len, cyaml_s
     return t_ety;
 }
 
-void append_difficulty_json(cJSON *obj_song, cJSON *json_difficulties, arcpkg_chart_t *charts, int chart_index, bool *rating_class_tag) {
+void append_difficulty_json(cJSON *obj_song, cJSON *json_difficulties, arcpkg_chart_t *charts, int chart_index, int rating_class) {
     cJSON *json_difficulty;
     cJSON *json_rating_class, *json_charter, *json_illustrator, *json_rating, *json_rating_plus;
     int i = chart_index;
@@ -153,9 +164,6 @@ void append_difficulty_json(cJSON *obj_song, cJSON *json_difficulties, arcpkg_ch
     json_difficulty = cJSON_CreateObject();
     VALIDATION_CJSON(json_difficulty, obj_song)
     cJSON_AddItemToArray(json_difficulties, json_difficulty);
-
-    int rating_class = atoi(charts[i].chart_path); // NOLINT(*-err34-c)
-    rating_class_tag[rating_class] = true;
 
     const char *charter = charts[i].charter;
 
@@ -341,38 +349,71 @@ cJSON *gen_song_json(const char *id,
     cJSON_AddItemToObject(obj_song, "difficulties", json_difficulties);
 
 
-    bool rating_class_tag[4] = {false, false, false, false};
+    int rating_class_tag[4] = {-1, -1, -1, -1};
 
-    int i;
+    int i, c_rating_class;
     for (i = 0; i < charts_count; i++) {
-        append_difficulty_json(obj_song, json_difficulties, charts, i, rating_class_tag);
+        c_rating_class = atoi(charts[i].chart_path); // NOLINT(*-err34-c)
+        rating_class_tag[c_rating_class] = i;
     }
 
-    // complete the missing rating classes
-    if (!rating_class_tag[0]) {
-        append_difficulty_json_placeholder(obj_song, json_difficulties, 0);
-    }
-    if (!rating_class_tag[1]) {
-        append_difficulty_json_placeholder(obj_song, json_difficulties, 1);
-    }
-    if (!rating_class_tag[2]) {
-        append_difficulty_json_placeholder(obj_song, json_difficulties, 2);
+    for (i = 0; i < 4; i++) {
+        if (rating_class_tag[i] != -1) {
+            append_difficulty_json(obj_song, json_difficulties, charts, rating_class_tag[i], i);
+        } else {
+            if (i < 3) append_difficulty_json_placeholder(obj_song, json_difficulties, i);
+        }
     }
 
     return obj_song;
 }
 
-char *progress_formatter(unsigned int ety_len) {
+char *progress_formatter(unsigned int ety_len, const char *extra) {
+    //  Working on '%s' (%s/%s)\n
     // for example, `ety_len` eql to 234
     int ety_len_len = (int) log10(ety_len) + 1; // then `ety_len_len` is 3
     int ety_len_len_len = (int) log10(ety_len_len) + 1; // `ety_len_len_len` is the length of `ety_len_len`, which is 1
-    char *orig_fmt = "[%d/%d] Working on '%s' (%s/%s)\n";
+    char *orig_fmt = calloc(sizeof(char), 8 + strlen(extra) + 1);
+    VALIDATION_ALLOC(orig_fmt)
+    sprintf(orig_fmt, "%s%s", "[%d/%d] ", extra);
+
     char *progress_fmt = calloc(sizeof(char), strlen(orig_fmt) + 2 * ety_len_len_len + 1);
     VALIDATION_ALLOC(progress_fmt)
 
-    sprintf(progress_fmt, "[%%%dd/%%%dd]", ety_len_len, ety_len_len);
-    strcat(progress_fmt, " Working on '%s' (%s/%s)\n");
+    sprintf(progress_fmt, "[%%%dd/%%%dd] ", ety_len_len, ety_len_len);
+    strcat(progress_fmt, extra);
     return progress_fmt;
+}
+
+char **get_arctap_se_list(struct zip_t *zip, const char *c_dir, int *length) {
+    char **s = NULL;
+    unsigned long size = 0;
+
+    ssize_t n = zip_entries_total(zip);
+    int i;
+    for (i = 0, *length = 0; i < n; i++) {
+        zip_entry_openbyindex(zip, i);
+        const char *name = zip_entry_name(zip);
+        if (is_endwith(name, ".wav")) {
+            char *c_dir_real, *se;
+            c_dir_real = strtok((char *) name, "/");
+            se = strtok(NULL, "/");
+
+            if (strcmp(c_dir, c_dir_real) == 0) {
+                if (*length > 0) {
+                    s = realloc(s, sizeof(char *) * (size += strlen(se) + 1));
+                } else {
+                    s = calloc(sizeof(char *), (size += strlen(se) + 1));
+                }
+                VALIDATION_ALLOC(s)
+                s[*length] = strdup(se);
+                *length = *length + 1;
+            }
+        }
+        zip_entry_close(zip);
+    }
+
+    return s;
 }
 
 #ifdef WIN32
