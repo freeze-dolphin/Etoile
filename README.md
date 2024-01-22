@@ -110,7 +110,7 @@
 4. 安装 [`Lua`](https://www.lua.org/):
 
    ```shell
-   $ sudo apt install lua5.4
+   $ sudo apt install liblua5.4-dev
    ```
 5. 确保 `CMake` 已安装，并执行:
 
