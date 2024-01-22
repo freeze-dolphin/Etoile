@@ -58,7 +58,7 @@
         --fix-constant
     ```
 
-这两则示例功能相同，读取当前目录下的 'Pilcrow_.LivingWill.arcpkg'，设定 'songs' 目录
+这两则示例功能相同
 
 [^1]: 若不写此参数，程序将读取执行目录内的 'aff_processor.lua'，如果文件不存在将禁用此功能
 
