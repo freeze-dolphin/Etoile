@@ -19,71 +19,99 @@
 
 参数名中带 `*` 的是必须参数，这些参数控制程序的主要行为
 
-| 参数名           | 简介              | 例子                              |
-|:--------------|:----------------|:--------------------------------|
-| --input, -i * | .arcpkg 文件      | -i ./Pilcrow_.LivingWill.arcpkg |
-| --songs, -o * | songs 目录        | -o ./songs                      |
-| --bg, -b *    | 背景图片目录          | -b assets/img/bg                |
-| --pack, -p *  | 曲包名称            | -p default                      |
-| --lua, -l     | Lua 脚本路径        | -l ./aff_processor.lua          |
-| --version, -v | 曲目加入时的游戏版本 [^5] | -v 2.33                         |
+| 参数名           | 简介             | 例子                              |
+|:--------------|:---------------|:--------------------------------|
+| --input, -i * | .arcpkg 文件     | -i ./Pilcrow_.LivingWill.arcpkg |
+| --songs, -o * | songs 目录       | -o ./songs                      |
+| --bg, -b *    | 背景图片目录         | -b assets/img/bg                |
+| --pack, -p *  | 曲包名称           | -p default                      |
+| --lua, -l     | Lua 脚本路径 [^1]  | -l ./aff_processor.lua          |
+| --version, -v | 曲目加入时的游戏版本[^2] | -v 2.33                         |
 
 | 选项             | 简介          |
 |:---------------|:------------|
-| --force        | 启用强制模式 [^1] |
-| --fix-constant | 启用定数修正 [^2] |
+| --force        | 启用强制模式[^3]  |
+| --fix-constant | 启用定数修正[^4]  |
 | --help, -h     | 显示帮助信息和版本信息 |
 
-[^1]: 强制模式不会在覆盖背景文件和 `songlist` 文件时提醒用户
-[^2]: 有些曲师没有填写定数参数，只是写了一个定数显示文本（如：“Future 10”），我们无法从这样的文本中判断具体定数，因为有些人可能会写类似“Eternity
+一般来说，推荐开启定数修正
+
+下面是一个简单的使用示例：
+
+- Windows：
+
+    ```batch
+    Etoile -i Pilcrow_.LivingWill.arcpkg -o songs -b bg -p default -l aff_processor.lua -v 3.4 --force --fix-constant
+    ```
+
+- Linux：
+
+    ```shell
+    $ ./Etoile \
+        -i ./Pilcrow_.LivingWill.arcpkg \
+        -o ./songs \
+        -b ./bg \
+        -p default \
+        -l aff_processor.lua \
+        -v 3.4 \
+        --force \
+        --fix-constant
+    ```
+
+这两则示例功能相同，读取当前目录下的 'Pilcrow_.LivingWill.arcpkg'，设定 'songs' 目录
+
+[^1]: 若不写此参数，程序将读取执行目录内的 'aff_processor.lua'，如果文件不存在将禁用此功能
+
+[^2]: 若不写此参数，程序将默认为 1.0 版本
+
+[^3]: 强制模式不会在覆盖背景文件和 `songlist` 文件时提醒用户
+
+[^4]: 有些曲师没有填写定数参数，只是写了一个定数显示文本（如：“Future 10”），我们无法从这样的文本中判断具体定数，因为有些人可能会写类似“Eternity
 ???”之类的东西；开启此项后，缺失定数参数的谱面将被定为
 1.0；若不开启此项参数，缺失定数参数的谱面将被转换程序忽略
-[^5]: 不写此参数默认为 1.0 版本
 
 ## 构建
 
-注意，对于 Windows，由于本人没有现成的 Windows 开发环境，无法对 Windows 平台进行本地编译，只能在自己的电脑进行交叉编译并使用 wine 进行测试；至于
-macOS，我既不会交叉编译也没有类似的兼容层来测试，如果你会写 macOS
+注意，对于 Windows，由于本人没有现成的 Windows 开发环境，无法对 Windows 平台进行本地编译，只能在自己的电脑进行交叉编译并使用 wine 进行测试
+
+至于 macOS，我既不会交叉编译也没有类似的兼容层来测试，如果你会写 macOS
 兼容并且愿意为这个项目支持，那么欢迎 [Pull Request](https://github.com/freeze-dolphin/Etoile/pulls)～
 
 开发时使用的库版本：
 
-| library       | version                   |
-|:--------------|:--------------------------|
-| cargs         | 1.1.0 [^3]                |
-| zip           | 0.3.1 [^3]                |
-| libcyaml      | 1.3.1-1 [^4]              |
-| cJSON         | 1.7.15-1 [^4]             |
-| libmagickwand | 8:6.9.11.60+dfsg-1.6 [^4] |
-| lua           | 5.4.4-3 [^4]              |
+| library       | version                  |
+|:--------------|:-------------------------|
+| cargs         | 1.1.0[^5]                |
+| zip           | 0.3.1[^5]                |
+| libcyaml      | 1.3.1-1[^6]              |
+| cJSON         | 1.7.15-1[^6]             |
+| libmagickwand | 8:6.9.11.60+dfsg-1.6[^6] |
+| lua           | 5.4.4-3[^6]              |
 
-[^3]: 从 github 中克隆的源代码
-[^4]: 从 debian 12 的仓库中安装
+[^5]: 从 github 中克隆的源代码
+
+[^6]: 从 debian 12 的仓库中安装的软件包版本
 
 1. 安装 [`libcyaml`](https://github.com/tlsa/libcyaml):
 
    ```shell
    $ sudo apt install libcyaml-dev
    ```
-
 2. 安装 [`libcjson`](https://github.com/DaveGamble/cJSON/):
 
    ```shell
    $ sudo apt install libcjson-dev
    ```
-
 3. 安装 [`MagickWand`](http://www.imagemagick.org/script/magick-wand.php):
 
    ```shell
    $ sudo apt install libmagickwand-dev
    ```
-
 4. 安装 [`Lua`](https://www.lua.org/):
 
-    ```shell
+   ```shell
    $ sudo apt install lua5.4
    ```
-
 5. 确保 `CMake` 已安装，并执行:
 
    ```shell

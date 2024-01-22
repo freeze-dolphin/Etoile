@@ -276,7 +276,6 @@ int main(int argc, char *argv[]) {
 
                     if (proj->charts[j].chart_constant < 1.0) {
                         if (flag_auto_fix_constant) {
-                            // TODO 2
                             fprintf(log_file,
                                     "[WARN] Chart constant of '%s' (from '%s', constant = %lf) is below one. Fixing it to 1.0...\n",
                                     chart_path,
@@ -343,26 +342,7 @@ int main(int argc, char *argv[]) {
                             sprintf(out_bg_path, "%s/%s", path_bg_dir, bg_snake);
                         }
 
-                        /* TODO 1
-                         * if PST, PRS and BYD use the same audio / jacket,
-                         * it should be optimized to use 'base' as audio / jacket
-
-                        char *base_slot = NULL;
-                        switch (rating_class) {
-                            case 0:
-                            case 1:
-                            case 3:
-                                base_slot = calloc(sizeof(char), 2);
-                                VALIDATION_ALLOC(base_slot)
-                                sprintf(base_slot, "%d", rating_class);
-                                break;
-                            default:
-                                base_slot = calloc(sizeof(char), 5);
-                                VALIDATION_ALLOC(base_slot)
-                                strcpy(base_slot, "base");
-                                break;
-                        }
-                         */
+                        // TODO 1
                         const char *base_slot = "base";
 
                         char *out_audio_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(base_slot) + 6);

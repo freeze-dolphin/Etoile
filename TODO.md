@@ -1,15 +1,13 @@
-# Roadmap & TODOs
+# TODOs
 
-Plans are divided into different parts according to their stages of execution in the program.
+根据执行时的不同阶段，TODO 被分为不同的部分
 
-## Prelude
+## 转换操作之前
 
-Before we actually start the conversion...
+- [ ] 选择性提取:
 
-- [ ] selective extraction:
-
-  Only the song(s) of selected id(s) will be extracted and others will be ignored
-  Using the following launch args, Etoile will only extract `ShiMei.SimpleFolds` and  `Arcthesia.Unplayable`
+  只有选中的 ID 代表的曲目才会被提取
+  在这个例子中，只有 `ShiMei.SimpleFolds` 和 `Arcthesia.Unplayable` 会被提取
 
     ```shell
     $ ./Etoile \
@@ -21,33 +19,29 @@ Before we actually start the conversion...
     --force
     ```
 
-## In-Operation
+## 转换过程中
 
-During the conversion
+### 资源和结构
 
-### Resources & Structure
+- [x] 自动提取曲目相关资源
+- [x] 自动提取特殊天键的打击音效
+- [ ] [TODO 1] 对于同一张曲目有多个音频、曲绘的情况进行处理（目前无论该曲目是否有 PST，PRS 和 BYD 难度，资源文件都使用 'base'）
 
-- [x] Auto extract chart resources
-- [x] Detect and extract sound effects of arctaps
-- [ ] [TODO 1] If PST, PRS and BYD use the same audio / jacket, they should use 'base' as audio / jacket (currently, the program will
-  copy `base.ogg` / `base.jpg` and rename it to `0.ogg` etc. if there is PST chart)
+### 谱面
 
-### Chart
-
-- [x] Custom Lua script support for aff preprocessing
-- [ ] Ask for user's response when encountering undetectable chart difficulty
-- [ ] [TODO 2] or we could make a converter for those charts without a chart constant, which converts "Future 10" to chart constant 10.0
+- [x] 使用自定义 Lua 脚本对 aff 进行处理，去除无效语句并进行语法转换
+- [x] 当程序遇到无法判断定数的谱面时，自动修正为 1.0
 
 #### Lua
 
-- [x] Restrict some parameters to be '%.2f' formatted
-- [x] If the arcpkg extracts without required wav file (to be used in 'arc()'), the `hitsound` field will be replaced with 'none'
+- [x] 强制某些参数保留两位小数（写完才发现现在不用强制两位小数了？）
+- [x] 如果在谱面中用到了某些打击音效但是 `.arcpkg` 中没有，将打击音效设为 'none'
+- [x] 去除无效的 'scenecontrol' 语句
+- [x] 去除无效的 'timinggroup' 参数，并将 'ArcCreate' 的参数格式转换为 'Arcaea' 的
 
-## Outputting
+## 输出 (songlist)
 
-The output of the conversion, the `songlist` in short
-
-- [ ] settings overwriting: (I didn't realize how complicated the structure of `songlist` is until I looked up 'PRAGMATISM'...)
+- [ ] 选项覆盖（点名白魔王 BYD）
 
     ```json
     {
