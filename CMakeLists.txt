@@ -103,16 +103,16 @@ if (TESTING)
 
     add_library(utils src/utils.c)
     target_link_libraries(utils m)
+    target_link_libraries(utils cargs)
+    target_link_libraries(utils zip)
+    target_link_libraries(utils cjson)
+    target_link_libraries(utils cyaml)
+    target_link_libraries(utils ${LUA_LIBRARIES})
+    target_include_directories(utils PUBLIC ${LUA_INCLUDE_DIRS})
+    target_compile_options(utils PUBLIC ${LUA_CFLAGS_OTHER})
 
     add_executable(test_utils test/test_utils.c)
     target_link_libraries(test_utils utils)
-    target_link_libraries(test_utils cargs)
-    target_link_libraries(test_utils zip)
-    target_link_libraries(test_utils cjson)
-    target_link_libraries(test_utils cyaml)
-    target_link_libraries(test_utils ${LUA_LIBRARIES})
-    target_include_directories(test_utils PUBLIC ${LUA_INCLUDE_DIRS})
-    target_compile_options(test_utils PUBLIC ${LUA_CFLAGS_OTHER})
 
     add_test(
             NAME "utils - is_contained_in_file"

@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 
     TEST("progress_formatter")
         {
-            char *fmt = progress_formatter(1145141919);
+            char *fmt = progress_formatter(1145141919, "Working on '%' (%s/%s)\n");
             printf("fmt=%s\n", fmt);
             assert(eql(fmt, "[%10d/%10d] Working on '%s' (%s/%s)\n"));
         }
