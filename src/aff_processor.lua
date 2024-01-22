@@ -243,6 +243,21 @@ local function process(cmd)
             args[9] = "none";
         end
 
+        for wav in string.gmatch(args[9], "(.*)%.wav") do
+            if wav ~= nil then
+                :: continue ::
+            end
+
+            local wav_file = io.open(out_proj_path .. wav .. ".wav", "r");
+            if wav_file then
+                args[9] = wav .. "_wav";
+                io.close(wav_file);
+            else
+                args[9] = "none";
+            end
+            break
+        end
+
         args[3] = string.format("%.2f", tostring(args[3]));
         args[4] = string.format("%.2f", tostring(args[4]));
         args[6] = string.format("%.2f", tostring(args[6]));

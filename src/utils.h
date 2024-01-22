@@ -14,6 +14,9 @@
 #include <cyaml/cyaml.h>
 #include <cjson/cJSON.h>
 #include <zip.h>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #define DBG(str) if (flag_dbg) printf("[DEBUG] %s\n", str);
 
@@ -105,5 +108,7 @@ int get_terminal_width();
 char *progress_formatter(unsigned int ety_len, const char *extra);
 
 char **get_arctap_se_list(struct zip_t *zip, const char *c_dir, int *length);
+
+bool is_exist_in_c_dir(struct zip_t *zip, const char *c_dir, char *file_name);
 
 #endif //ETOILE_UTILS_H

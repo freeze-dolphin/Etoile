@@ -416,6 +416,25 @@ char **get_arctap_se_list(struct zip_t *zip, const char *c_dir, int *length) {
     return s;
 }
 
+bool is_exist_in_c_dir(struct zip_t *zip, const char *c_dir, char *file_name) {
+    ssize_t n = zip_entries_total(zip);
+    int i;
+    for (i = 0; i < n; i++) {
+        zip_entry_openbyindex(zip, i);
+        const char *name = zip_entry_name(zip);
+        char *c_dir_real, *file_name_real;
+        c_dir_real = strtok((char *) name, "/");
+        file_name_real = strtok(NULL, "/");
+
+        if (strcmp(c_dir, c_dir_real) == 0 && strcmp(file_name_real, file_name) == 0) {
+            zip_entry_close(zip);
+            return true;
+        }
+        zip_entry_close(zip);
+    }
+    return false;
+}
+
 #ifdef WIN32
 
 int get_terminal_width() {

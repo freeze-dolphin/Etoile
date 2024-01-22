@@ -332,6 +332,10 @@ int main(int argc, char *argv[]) {
                             sprintf(out_bg_path, "%s/%s", path_bg_dir, bg_snake);
                         }
 
+                        /* TODO 1
+                         * if PST, PRS and BYD use the same audio / jacket,
+                         * it should be optimized to use 'base' as audio / jacket
+
                         char *base_slot = NULL;
                         switch (rating_class) {
                             case 0:
@@ -347,11 +351,9 @@ int main(int argc, char *argv[]) {
                                 strcpy(base_slot, "base");
                                 break;
                         }
-
-                        /* TODO 1
-                         * if PST, PRS and BYD use the same audio / jacket,
-                         * it should be optimized to use 'base' as audio / jacket
                          */
+                        const char *base_slot = "base";
+
                         char *out_audio_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(base_slot) + 6);
                         char *out_jacket_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(base_slot) + 6);
                         char *out_jacket_256_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(base_slot) + 10);
@@ -390,6 +392,26 @@ int main(int argc, char *argv[]) {
 
                         after_bg_extract:
 
+                        { // extract se
+                            char *c_dir_real;
+                            char *se;
+
+                            int length;
+                            for (char **s = get_arctap_se_list(zip, c_dir, &length); length > 0; length--) {
+                                se = strtok((char *) s[length - 1], "/");
+                                char *out_se_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(se) + 2);
+                                VALIDATION_ALLOC(out_se_path)
+                                sprintf(out_se_path, "%s/%s", out_proj_path, se);
+
+                                char *se_path = calloc(sizeof(char), strlen(c_dir) + strlen(se) + 2);
+                                VALIDATION_ALLOC(se_path)
+                                sprintf(se_path, "%s/%s", c_dir, se);
+
+                                zip_entry_open(zip, se_path);
+                                zip_entry_fread(zip, out_se_path);
+                                zip_entry_close(zip);
+                            }
+                        }
 
                         { // extract chart
                             if (!flag_lua) {
@@ -409,6 +431,9 @@ int main(int argc, char *argv[]) {
                             zip_entry_close(zip);
 
                             if (lua_file_ver <= 1.0) {
+                                lua_pushstring(L, out_proj_path);
+                                lua_setglobal(L, "out_proj_path");
+
                                 lua_getglobal(L, "exec");
                                 if (lua_isnil(L, -1)) {
                                     ERR_AND_EXIT("[ERROR] Cannot process aff: specific func 'exec' not found\n")
@@ -438,27 +463,6 @@ int main(int argc, char *argv[]) {
                             zip_entry_open(zip, proj_audio_path);
                             zip_entry_fread(zip, out_audio_path);
                             zip_entry_close(zip);
-                        }
-
-                        { // extract se
-                            char *c_dir_real;
-                            char *se;
-
-                            int length;
-                            for (char **s = get_arctap_se_list(zip, c_dir, &length); length > 0; length--) {
-                                se = strtok((char *) s[length - 1], "/");
-                                char *out_se_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(se) + 2);
-                                VALIDATION_ALLOC(out_se_path)
-                                sprintf(out_se_path, "%s/%s", out_proj_path, se);
-
-                                char *se_path = calloc(sizeof(char), strlen(c_dir) + strlen(se) + 2);
-                                VALIDATION_ALLOC(se_path)
-                                sprintf(se_path, "%s/%s", c_dir, se);
-
-                                zip_entry_open(zip, se_path);
-                                zip_entry_fread(zip, out_se_path);
-                                zip_entry_close(zip);
-                            }
                         }
 
                         { // extract jacket

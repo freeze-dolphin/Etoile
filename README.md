@@ -125,7 +125,6 @@ During the conversion
 
 - [x] Auto extract chart resources
 - [x] Detect and extract sound effects of arctaps
-- [ ] Some arcpkgs names 'base.ogg' as 'audio.ogg', we just simply ignore them and warn the user about it
 - [ ] [TODO 1] If PST, PRS and BYD use the same audio / jacket, they should use 'base' as audio / jacket (currently, the program will
   copy `base.ogg` / `base.jpg` and rename it to `0.ogg` etc. if there is PST chart)
 
@@ -137,7 +136,8 @@ During the conversion
 
 ##### Lua
 
-- [ ] Restrict some parameters to be '%.2f' formatted
+- [x] Restrict some parameters to be '%.2f' formatted
+- [x] If the arcpkg extracts without required wav file (to be used in 'arc()'), the `hitsound` field will be replaced with 'none'
 
 ### Outputting
 
