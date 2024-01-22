@@ -5,9 +5,11 @@
 
 # Étoile
 
-读取 ArcCreate 的 `.arcpkg` 格式，自动解压相关资源并生成 `songlist`
+读取 ArcCreate 的 `.arcpkg` 格式，自动解压相关资源并生成 `songlist`，并且支持单个 `.arcpkg` 内塞多首曲目
 
-支持单个 `.arcpkg` 内塞多首曲目
+此工具旨在将 `.arcpkg` 转换为 `Arcaea` 可读的谱面，去除部分不可实现的 `scenecontrol` 和 `timinggroup` 的同时保留原谱的可玩性
+
+使用过程中碰到任何问题，欢迎在 [Issues](https://github.com/freeze-dolphin/Etoile/issues) 中交流，中英文皆可 ╮(￣▽￣)╭
 
 ## 食用方法
 
@@ -36,7 +38,8 @@
 ## 构建
 
 注意，对于 Windows，由于本人没有现成的 Windows 开发环境，无法对 Windows 平台进行本地编译，只能在自己的电脑进行交叉编译并使用 wine 进行测试；至于
-macOS，我既不会交叉编译也没有类似的兼容层来测试，如果你会写 macOS 兼容并且愿意为这个项目支持，那么欢迎 Pull Request～
+macOS，我既不会交叉编译也没有类似的兼容层来测试，如果你会写 macOS
+兼容并且愿意为这个项目支持，那么欢迎 [Pull Request](https://github.com/freeze-dolphin/Etoile/pulls)～
 
 开发时使用的库版本：
 
