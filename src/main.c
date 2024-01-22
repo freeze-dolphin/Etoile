@@ -86,9 +86,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    char *path_log = calloc(sizeof(char), strlen(path_songs_dir) + 12);
-    sprintf(path_log, "%s/etoile.log", path_songs_dir);
-    log_file = fopen(path_log, "w");
+    log_file = fopen("./etoile.log", "w");
 
     if (s_version != NULL && strlen(s_version) != 0) {
         s_addition_version = calloc(sizeof(char), strlen(s_version) + 1);
