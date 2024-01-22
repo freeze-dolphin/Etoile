@@ -1,36 +1,52 @@
 <h5 align="right"> 💫 </h5>
 <img width="92" height="92" src="https://arcaea.lowiro.com/img/11_icon.d91d4854.png" align="right" />
 
-[English](./README.md) | [简体中文](./README.zh-CN.md)
+[English](./README.en.md) | [简体中文](./README.md)
 
 # Étoile
 
-A mini tool written in C that helps convert `.arcpkg` to Arcaea readable `songlist`
+读取 ArcCreate 的 `.arcpkg` 格式，自动解压相关资源并生成 `songlist`，并且支持单个 `.arcpkg` 内塞多首曲目
 
-## Usage
+此工具旨在将 `.arcpkg` 转换为 `Arcaea` 可读的谱面，去除部分不可实现的 `scenecontrol` 和 `timinggroup` 的同时保留原谱的可玩性
 
-### Command-line arguments
+使用过程中碰到任何问题，欢迎在 [Issues](https://github.com/freeze-dolphin/Etoile/issues) 中交流，中英文皆可 ╮(￣▽￣)╭
 
-| args        | desc         | example                         |
-|:------------|:-------------|:--------------------------------|
-| --input, -i | .arcpkg file | -i ./Pilcrow_.LivingWill.arcpkg |
-| --songs, -o | songs dir    | -o ./songs                      |
-| --bg, -b    | bg dir       | -b assets/img/bg                |
-| --pack, -p  | pack name    | -p default                      |
+## 食用方法
 
-| options        | desc                            |
-|:---------------|:--------------------------------|
-| --force        | enable force mode [^1]          |
-| --fix-constant | enable auto constant fixer [^2] |
-| --help, -h     | show the help message           |
+这是一个命令行工具，你需要在你系统的终端中执行
 
-[^1]: After enabling force mode, the program will disable prompts when overwriting `songlist` and background images
-[^2]: Some charts are packed without a specific chart constant but a sting like "Future 10", we cannot detect the proper constant from this
-since some charters may fill "Eternity 12" and so on into it... By enabling this option, the program will use 1.0 as chart constant for them
+以下参数列表，你也可以通过执行 `Etoile --help` 来查看
 
-## Building
+参数名中带 `*` 的是必须参数，这些参数控制程序的主要行为
 
-Native development libraries version:
+| 参数名           | 简介              | 例子                              |
+|:--------------|:----------------|:--------------------------------|
+| --input, -i * | .arcpkg 文件      | -i ./Pilcrow_.LivingWill.arcpkg |
+| --songs, -o * | songs 目录        | -o ./songs                      |
+| --bg, -b *    | 背景图片目录          | -b assets/img/bg                |
+| --pack, -p *  | 曲包名称            | -p default                      |
+| --lua, -l     | Lua 脚本路径        | -l ./aff_processor.lua          |
+| --version, -v | 曲目加入时的游戏版本 [^5] | -v 2.33                         |
+
+| 选项             | 简介          |
+|:---------------|:------------|
+| --force        | 启用强制模式 [^1] |
+| --fix-constant | 启用定数修正 [^2] |
+| --help, -h     | 显示帮助信息和版本信息 |
+
+[^1]: 强制模式不会在覆盖背景文件和 `songlist` 文件时提醒用户
+[^2]: 有些曲师没有填写定数参数，只是写了一个定数显示文本（如：“Future 10”），我们无法从这样的文本中判断具体定数，因为有些人可能会写类似“Eternity
+???”之类的东西；开启此项后，缺失定数参数的谱面将被定为
+1.0；若不开启此项参数，缺失定数参数的谱面将被转换程序忽略
+[^5]: 不写此参数默认为 1.0 版本
+
+## 构建
+
+注意，对于 Windows，由于本人没有现成的 Windows 开发环境，无法对 Windows 平台进行本地编译，只能在自己的电脑进行交叉编译并使用 wine 进行测试；至于
+macOS，我既不会交叉编译也没有类似的兼容层来测试，如果你会写 macOS
+兼容并且愿意为这个项目支持，那么欢迎 [Pull Request](https://github.com/freeze-dolphin/Etoile/pulls)～
+
+开发时使用的库版本：
 
 | library       | version                   |
 |:--------------|:--------------------------|
@@ -39,36 +55,36 @@ Native development libraries version:
 | libcyaml      | 1.3.1-1 [^4]              |
 | cJSON         | 1.7.15-1 [^4]             |
 | libmagickwand | 8:6.9.11.60+dfsg-1.6 [^4] |
-| lua           | 3.0.8-2 [^4]              |
+| lua           | 5.4.4-3 [^4]              |
 
-[^3]: from github
-[^4]: from debian 12
+[^3]: 从 github 中克隆的源代码
+[^4]: 从 debian 12 的仓库中安装
 
-1. Install [`libcyaml`](https://github.com/tlsa/libcyaml):
+1. 安装 [`libcyaml`](https://github.com/tlsa/libcyaml):
 
    ```shell
    $ sudo apt install libcyaml-dev
    ```
 
-2. Install [`libcjson`](https://github.com/DaveGamble/cJSON/):
+2. 安装 [`libcjson`](https://github.com/DaveGamble/cJSON/):
 
    ```shell
    $ sudo apt install libcjson-dev
    ```
 
-3. Install [`MagickWand`](http://www.imagemagick.org/script/magick-wand.php):
+3. 安装 [`MagickWand`](http://www.imagemagick.org/script/magick-wand.php):
 
    ```shell
    $ sudo apt install libmagickwand-dev
    ```
 
-4. Install [`GNU Guile 3.0`](https://www.gnu.org/software/guile/):
+4. 安装 [`Lua`](https://www.lua.org/):
 
     ```shell
-   $ sudo apt install guile-3.0-dev
+   $ sudo apt install lua5.4
    ```
 
-5. Make sure you have had `CMake` installed:
+5. 确保 `CMake` 已安装，并执行:
 
    ```shell
    $ mkdir build && cd build
@@ -76,6 +92,6 @@ Native development libraries version:
    $ make
    ```
 
-   You can also use the `Makefile` in project root to build automatically
+   或者使用项目根目录下的 `Makefile` 完成自动构建
 
 ## [TODO](./TODO.md)
