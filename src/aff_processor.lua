@@ -1,5 +1,3 @@
-version = 1.0;
-
 function table.length(t)
     local count = 0
     for _ in pairs(t) do
@@ -105,8 +103,8 @@ end
 
 local function break_cmd(procedure, cmd)
     local trimed, detrim_count = trim_count(cmd);
+
     if procedure == "scenecontrol" then
-        -- scenecontrol(t,type,*param1(float),*param2(int));
         local args = split(de_parentheses(trimed), ",");
         local result = {
             tonumber(args[1]),
@@ -114,7 +112,6 @@ local function break_cmd(procedure, cmd)
         };
 
         if #args == 4 then
-            -- the third arg must be float number
             table.insert(result, tonumber(args[3]))
             table.insert(result, tonumber(args[4]))
         end
@@ -136,6 +133,9 @@ local function break_cmd(procedure, cmd)
         }, detrim_count;
     elseif procedure == "arc" then
         local args = split(de_parentheses(trimed), ",");
+        if #args == 9 then
+            table.insert(args, 9, "none");
+        end
         local arctaps = split(get_arctaps(trimed), ",");
         local result = {
             tonumber(args[1]),
@@ -216,6 +216,10 @@ local available_sc_commands = { "trackhide", "trackshow", "trackdisplay", "redli
 
 local invalid_cmd = "###invalid###";
 
+arc_color_conv_cnt = 0;
+invalid_sc_conv_cnt = 0;
+invalid_tg_conv_cnt = 0;
+
 local function process(cmd)
     if not flag_property then
         if (cmd == "-") then
@@ -235,12 +239,42 @@ local function process(cmd)
         args[3] = string.format("%.2f", tostring(args[3]));
 
         return build_cmd(procedure, args, "", detrim_count);
+    elseif procedure == "hold" then
+        local args, detrim_count = break_cmd(procedure, cmd);
+        assert(args ~= nil);
+
+        if math.tointeger(args[3]) ~= nil then
+            if args[3] < 0 or args[3] > 5 then
+                args[3] = string.format("%.2f", tostring((args[3] + 0.5) / 2));
+            end
+        end
+
+        return build_cmd(procedure, args, "", detrim_count);
     elseif procedure == "arc" then
         local args, detrim_count = break_cmd(procedure, cmd);
         assert(args ~= nil);
 
+        if 0 > args[8] or args[8] > 2 then
+            args[8] = 2; -- convert to green arc if overflow
+            arc_color_conv_cnt = arc_color_conv_cnt + 1;
+        end
+
         if args[9] == "" then
             args[9] = "none";
+        end
+
+        for wav in string.gmatch(args[9], "(.*)_wav") do
+            if wav ~= nil then
+                :: continue ::
+            end
+
+            local wav_file = io.open(out_proj_path .. wav .. ".wav", "r");
+            if wav_file then
+                io.close(wav_file);
+            else
+                args[9] = "none";
+            end
+            break
         end
 
         for wav in string.gmatch(args[9], "(.*)%.wav") do
@@ -257,7 +291,6 @@ local function process(cmd)
             end
             break
         end
-
         args[3] = string.format("%.2f", tostring(args[3]));
         args[4] = string.format("%.2f", tostring(args[4]));
         args[6] = string.format("%.2f", tostring(args[6]));
@@ -281,6 +314,7 @@ local function process(cmd)
         assert(args ~= nil);
 
         if not table.contain(available_sc_commands, args[2]) then
+            invalid_sc_conv_cnt = invalid_sc_conv_cnt + 1;
             return invalid_cmd;
         end
 
@@ -321,6 +355,8 @@ local function process(cmd)
             end
         end
 
+        invalid_tg_conv_cnt = invalid_tg_conv_cnt + #args - #result;
+
         return build_timing_group(result, detrim_count);
     end
 
@@ -328,8 +364,22 @@ local function process(cmd)
 end
 
 function exec(aff)
+    arc_color_conv_cnt = 0;
+    invalid_sc_conv_cnt = 0;
+    invalid_tg_conv_cnt = 0;
+
     local cmds = split(aff, '\n');
     local result = table.map(cmds, process);
+
+    if arc_color_conv_cnt > 0 then
+        log_to_file("[LUA WARN] Fixing color for " .. arc_color_conv_cnt .. " arcs");
+    end
+    if invalid_sc_conv_cnt > 0 then
+        log_to_file("[LUA WARN] Removing " .. invalid_sc_conv_cnt .. " invalid scene controls");
+    end
+    if invalid_tg_conv_cnt > 0 then
+        log_to_file("[LUA WARN] Removing " .. invalid_tg_conv_cnt .. " invalid timing groups");
+    end
 
     local rst_aff = "";
     for i, v in ipairs(result) do
@@ -339,3 +389,5 @@ function exec(aff)
     end
     return rst_aff;
 end
+
+version = 1.0;

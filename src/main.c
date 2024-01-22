@@ -9,7 +9,14 @@
 #include <lualib.h>
 #include <wand/MagickWand.h>
 
-#define DEBUG
+static FILE *log_file;
+
+static int lua_print_to_log(lua_State *L) {
+    if (log_file) {
+        fprintf(log_file, "%s\n", luaL_checkstring(L, 1));
+        fflush(log_file);
+    }
+}
 
 int main(int argc, char *argv[]) {
     const char *path_arcpkg = NULL, *path_songs_dir = NULL, *path_bg_dir = NULL, *s_packname = NULL, *s_version = NULL;
@@ -81,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     char *path_log = calloc(sizeof(char), strlen(path_songs_dir) + 12);
     sprintf(path_log, "%s/etoile.log", path_songs_dir);
-    FILE *log_file = fopen(path_log, "w");
+    log_file = fopen(path_log, "w");
 
     if (s_version != NULL && strlen(s_version) != 0) {
         s_addition_version = calloc(sizeof(char), strlen(s_version) + 1);
@@ -125,6 +132,7 @@ int main(int argc, char *argv[]) {
         }
     } else {
         fprintf(log_file, "[INFO] Overwriting '%s'\n", path_songlist);
+        fflush(log_file);
 
         write_songlist:
         f_songlist = fopen(path_songlist, "w");
@@ -165,6 +173,7 @@ int main(int argc, char *argv[]) {
                 undefined_file_ver:
                 fprintf(log_file,
                         "[WARN] Specific double field 'version' not found in '%s', using '1.0' by default\n", path_lua);
+                fflush(log_file);
             }
         }
         lua_pop(L, 1);
@@ -198,13 +207,14 @@ int main(int argc, char *argv[]) {
     { // parse 'index.yml'
         unsigned int ety_len;
         arcpkg_entry_t *ety = parse_yaml_with_schema(s_index_yml, &ety_len, index_schema);
+        free(s_index_yml);
 
         int i;
         for (i = 0; i < ety_len; i++) {
             const char *c_dir = ety[i].directory;
             const char *c_id = ety[i].identifier;
             if (ety[i].type != ENTRY_TYPE_LEVEL) {
-                printf(progress_formatter(ety_len, " Ignoring pack entry '%s'\n"), i + 1, ety_len, c_id);
+                printf(progress_formatter(ety_len, "Ignoring pack entry '%s'\n"), i + 1, ety_len, c_id);
                 continue; // only support level
             }
 
@@ -215,13 +225,13 @@ int main(int argc, char *argv[]) {
 
             c_dir_to_snake_case((char *) c_dir_snake);
 
-#ifdef DEBUG
+#ifdef TEST_DEBUG
             DBG(c_dir)
             DBG(c_dir_snake)
             DBG(c_settings)
 #endif
 
-            printf(progress_formatter(ety_len, " Working on '%s' (%s/%s)\n"), i + 1, ety_len, c_id, path_songs_dir, c_dir_snake);
+            printf(progress_formatter(ety_len, "Working on '%s' (%s/%s)\n"), i + 1, ety_len, c_id, path_songs_dir, c_dir_snake);
 
             char *proj_setting_path = calloc(sizeof(char), strlen(c_dir) + strlen(c_settings) + 2);
             VALIDATION_ALLOC(proj_setting_path)
@@ -244,6 +254,7 @@ int main(int argc, char *argv[]) {
             }
             { // parse project settings
                 arcpkg_proj_setting_t *proj = parse_yaml_with_schema(s_proj_setting_yml, NULL, proj_schema);
+                free(s_proj_setting_yml);
 
                 bool aborted = false;
 
@@ -273,12 +284,14 @@ int main(int argc, char *argv[]) {
                                     chart_path,
                                     c_id,
                                     proj->charts[j].chart_constant);
+                            fflush(log_file);
                             proj->charts[j].chart_constant = 1.0F;
                         } else {
                             fprintf(log_file, "[WARN] Chart constant of '%s' (from '%s', constant = %lf) is below one, ignored\n",
                                     chart_path,
                                     c_id,
                                     proj->charts[j].chart_constant);
+                            fflush(log_file);
                             aborted = true;
                             continue;
                         }
@@ -314,7 +327,7 @@ int main(int argc, char *argv[]) {
                         sprintf(proj_audio_path, "%s/%s", c_dir, audio_path);
                         sprintf(proj_jacket_path, "%s/%s", c_dir, jacket_path);
 
-#ifdef DEBUG
+#ifdef TEST_DEBUG
                         if (!bg_null) DBG(proj_bg_path)
                         DBG(proj_chart_path)
                         DBG(proj_audio_path)
@@ -364,7 +377,7 @@ int main(int argc, char *argv[]) {
                         sprintf(out_jacket_path, "%s/%s.jpg", out_proj_path, base_slot);
                         sprintf(out_jacket_256_path, "%s/%s_256.jpg", out_proj_path, base_slot);
 
-#ifdef DEBUG
+#ifdef TEST_DEBUG
                         if (!bg_null) DBG(out_bg_path)
                         DBG(out_chart_path)
                         DBG(out_audio_path)
@@ -383,27 +396,30 @@ int main(int argc, char *argv[]) {
                                     if (resp != 'y' && resp != 'Y') goto after_bg_extract;
                                 } else {
                                     fprintf(log_file, "[INFO] Overwriting background img '%s' (from '%s')\n", bg_snake, c_id);
+                                    fflush(log_file);
                                 }
                             }
                             zip_entry_open(zip, proj_bg_path);
                             zip_entry_fread(zip, out_bg_path);
                             zip_entry_close(zip);
+
+                            free(proj_bg_path);
+                            free(out_bg_path);
                         }
 
                         after_bg_extract:
 
                         { // extract se
-                            char *c_dir_real;
-                            char *se;
+                            char *se, *se_path, *out_se_path;
 
                             int length;
                             for (char **s = get_arctap_se_list(zip, c_dir, &length); length > 0; length--) {
                                 se = strtok((char *) s[length - 1], "/");
-                                char *out_se_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(se) + 2);
+                                out_se_path = calloc(sizeof(char), strlen(out_proj_path) + strlen(se) + 2);
                                 VALIDATION_ALLOC(out_se_path)
                                 sprintf(out_se_path, "%s/%s", out_proj_path, se);
 
-                                char *se_path = calloc(sizeof(char), strlen(c_dir) + strlen(se) + 2);
+                                se_path = calloc(sizeof(char), strlen(c_dir) + strlen(se) + 2);
                                 VALIDATION_ALLOC(se_path)
                                 sprintf(se_path, "%s/%s", c_dir, se);
 
@@ -421,28 +437,32 @@ int main(int argc, char *argv[]) {
                                 goto after_chart_extract;
                             }
 
-                            unsigned char *s_aff;
+                            unsigned char *buf;
                             size_t bufsize;
 
                             zip_entry_open(zip, proj_chart_path);
                             bufsize = zip_entry_size(zip);
-                            s_aff = calloc(sizeof(unsigned char), bufsize + 1);
-                            zip_entry_noallocread(zip, (void *) s_aff, bufsize);
+                            buf = calloc(sizeof(unsigned char), bufsize);
+                            zip_entry_noallocread(zip, (void *) buf, bufsize);
                             zip_entry_close(zip);
 
+                            remove_char_from_str((char *) buf, '\r');
+
                             if (lua_file_ver <= 1.0) {
+                                lua_register(L, "log_to_file", lua_print_to_log);
                                 lua_pushstring(L, out_proj_path);
                                 lua_setglobal(L, "out_proj_path");
+                                lua_pushstring(L, c_dir_snake);
+                                lua_setglobal(L, "c_dir");
 
                                 lua_getglobal(L, "exec");
                                 if (lua_isnil(L, -1)) {
-                                    ERR_AND_EXIT("[ERROR] Cannot process aff: specific func 'exec' not found\n")
+                                    ERR_AND_EXIT("[ERROR] Cannot process aff: function 'exec' not found\n")
                                 }
 
-                                lua_pushstring(L, (const char *) s_aff);
-
+                                lua_pushstring(L, (const char *) buf);
                                 if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
-                                    ERR_AND_EXIT("[ERROR] Cannot process aff: %s\n", lua_tostring(L, -1))
+                                    ERR_AND_EXIT("[LUA ERROR] %s\n", lua_tostring(L, -1))
                                 }
 
                                 if (lua_isstring(L, -1)) {
@@ -463,6 +483,9 @@ int main(int argc, char *argv[]) {
                             zip_entry_open(zip, proj_audio_path);
                             zip_entry_fread(zip, out_audio_path);
                             zip_entry_close(zip);
+
+                            free(proj_audio_path);
+                            free(out_audio_path);
                         }
 
                         { // extract jacket
@@ -499,6 +522,7 @@ int main(int argc, char *argv[]) {
     char *songlist_rst = cJSON_Print(json_songlist);
     fwrite(songlist_rst, sizeof(char), strlen(songlist_rst), f_songlist);
     fclose(f_songlist);
+    free(songlist_rst);
     MagickWandTerminus();
 
     printf("[INFO] Operation success, timestamp: %s\n", formatted_time);
