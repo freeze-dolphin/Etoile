@@ -4,6 +4,15 @@ bool is_file_exist(char *fname) {
     return access(fname, F_OK) == 0;
 }
 
+void remove_char_from_str(char *str, char c) {
+    char *src = str, *dst = str;
+    while (*src) {
+        *dst = *src++;
+        if (*dst != c) dst++;
+    }
+    *dst = '\0';
+}
+
 bool make_dir(const char *path) {
     return mkdir(MKDIR_ARGS(path));
 }
@@ -84,29 +93,6 @@ void c_dir_to_snake_case(char *str) {
             str[i] = '_';
         }
     }
-}
-
-char *read_all_from_file(FILE *f) {
-    int size = 1;
-    char *s = (char *) malloc(size);
-    if (s == NULL) {
-        fprintf(stderr, "Failed to allocate memory\n");
-        free(s);
-        exit(EXIT_FAILURE);
-    }
-
-    char buffer[256];
-    while (fgets(buffer, sizeof buffer, f) != NULL) {
-        char *tmp = realloc(s, (size += sizeof buffer));
-        if (tmp == NULL) {
-            fprintf(stderr, "Failed to allocate memory\n");
-            free(s);
-            exit(EXIT_FAILURE);
-        }
-        s = (char *) tmp;
-        strcat(s, buffer);
-    }
-    return s;
 }
 
 bool is_endwith(const char *str, char *suf) {
@@ -208,7 +194,6 @@ void append_difficulty_json_placeholder(cJSON *obj_song, cJSON *json_difficultie
     json_difficulty = cJSON_CreateObject();
     VALIDATION_CJSON(json_difficulty, obj_song)
     cJSON_AddItemToArray(json_difficulties, json_difficulty);
-
     const char *charter = "";
     const char *illustrator = "";
     int rating = -1;

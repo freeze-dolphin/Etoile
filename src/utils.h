@@ -78,6 +78,8 @@ bool make_dir(const char *path);
 
 bool is_file_exist(char *fname);
 
+void remove_char_from_str(char *str, char c);
+
 int is_contained_in_file(char *filename, char *target);
 
 void trim(char *str);
@@ -85,8 +87,6 @@ void trim(char *str);
 void to_snake_case(char *str);
 
 void c_dir_to_snake_case(char *str);
-
-char *read_all_from_file(FILE *f);
 
 bool is_endwith(const char *str, char *suf);
 
