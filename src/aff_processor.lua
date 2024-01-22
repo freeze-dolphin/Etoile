@@ -301,15 +301,23 @@ local function process(cmd)
         local result = {};
 
         for _, v in ipairs(args) do
-            if false or
-                    string.match(v, "anglex%d*") ~= nil or
-                    string.match(v, "angley%d*") ~= nil or
-                    table.contain({
-                        "noinput",
-                        "fadingholds"
-                    }, v)
+            if table.contain({
+                "noinput",
+                "fadingholds"
+            }, v)
             then
                 table.insert(result, v);
+            else
+                for x in string.gmatch(v, "anglex=(%d*)") do
+                    if x ~= nil then
+                        table.insert(result, "anglex" .. x);
+                    end
+                end
+                for y in string.gmatch(v, "angley=(%d*)") do
+                    if y ~= nil then
+                        table.insert(result, "angley" .. y);
+                    end
+                end
             end
         end
 
