@@ -99,14 +99,6 @@ target_include_directories(Etoile PUBLIC ${LUA_INCLUDE_DIRS})
 target_compile_options(Etoile PUBLIC ${LUA_CFLAGS_OTHER})
 
 if (TESTING)
-
-    # playground
-
-    add_executable(playground eva/playground.c)
-    target_link_libraries(playground cyaml)
-
-    # testing
-
     include(CTest)
 
     add_library(utils src/utils.c)
@@ -118,6 +110,9 @@ if (TESTING)
     target_link_libraries(test_utils zip)
     target_link_libraries(test_utils cjson)
     target_link_libraries(test_utils cyaml)
+    target_link_libraries(test_utils ${LUA_LIBRARIES})
+    target_include_directories(test_utils PUBLIC ${LUA_INCLUDE_DIRS})
+    target_compile_options(test_utils PUBLIC ${LUA_CFLAGS_OTHER})
 
     add_test(
             NAME "utils - is_contained_in_file"
