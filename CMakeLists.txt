@@ -1,13 +1,36 @@
 cmake_minimum_required(VERSION 3.25)
 project(Etoile C)
 
-option(cc_win "Cross compile for Windows" OFF)
-if (cc_win STREQUAL "1")
-    message("Environment variable `CROSS_COMPILE_WINDOWS` defined, cross compiling for Windows...")
-    set(CMAKE_SYSTEM_NAME Windows)
-    set(CMAKE_C_COMPILER i686-w64-mingw32-gcc)
-    set(CMAKE_CXX_COMPILER i686-w64-mingw32-g++)
+option(DEBUG "Source debug mode")
+option(TESTING "Testing switch")
+option(XC_WIN "Cross compile for Windows")
+
+set(DEBUG ON)
+set(TESTING ON)
+set(XC_WIN OFF)
+
+if (DEFINED ENV{RELEASE_MODE})
+    set(DEBUG OFF)
+    set(TESTING OFF)
 endif ()
+
+if (DEFINED ENV{XC_WIN})
+    set(XC_WIN ON)
+endif ()
+
+if (DEBUG)
+    add_definitions(-DTEST_DEBUG)
+endif ()
+
+if (XC_WIN)
+    message("Cross compiling for Windows...")
+    set(CMAKE_SYSTEM_NAME Windows)
+    set(CMAKE_C_COMPILER /usr/bin/i686-w64-mingw32-gcc)
+    set(CMAKE_CXX_COMPILER /usr/bin/i686-w64-mingw32-g++)
+endif ()
+
+set(CMAKE_C_COMPILER /usr/bin/cc)
+set(CMAKE_CXX_COMPILER /usr/bin/c++)
 
 set(CMAKE_C_STANDARD 11)
 
@@ -74,40 +97,44 @@ target_link_libraries(Etoile ${LUA_LIBRARIES})
 target_include_directories(Etoile PUBLIC ${LUA_INCLUDE_DIRS})
 target_compile_options(Etoile PUBLIC ${LUA_CFLAGS_OTHER})
 
-# playground
+if (TESTING)
 
-add_executable(playground eva/playground.c)
-target_link_libraries(playground cyaml)
+    # playground
 
-# testing
+    add_executable(playground eva/playground.c)
+    target_link_libraries(playground cyaml)
 
-include(CTest)
+    # testing
 
-add_library(utils src/utils.c)
-target_link_libraries(utils m)
+    include(CTest)
 
-add_executable(test_utils test/test_utils.c)
-target_link_libraries(test_utils utils)
-target_link_libraries(test_utils cargs)
-target_link_libraries(test_utils zip)
-target_link_libraries(test_utils cjson)
-target_link_libraries(test_utils cyaml)
+    add_library(utils src/utils.c)
+    target_link_libraries(utils m)
 
-add_test(
-        NAME "utils - is_contained_in_file"
-        COMMAND $<TARGET_FILE:test_utils> "is_contained_in_file")
-add_test(
-        NAME "utils - trim"
-        COMMAND $<TARGET_FILE:test_utils> "trim")
-add_test(
-        NAME "utils - to_snake_case"
-        COMMAND $<TARGET_FILE:test_utils> "to_snake_case")
-add_test(
-        NAME "utils - is_file_exist"
-        COMMAND $<TARGET_FILE:test_utils> "is_file_exist")
-add_test(
-        NAME "utils - is_endwith"
-        COMMAND $<TARGET_FILE:test_utils> "is_endwith")
-add_test(
-        NAME "utils - progress_formatter"
-        COMMAND $<TARGET_FILE:test_utils> "progress_formatter")
+    add_executable(test_utils test/test_utils.c)
+    target_link_libraries(test_utils utils)
+    target_link_libraries(test_utils cargs)
+    target_link_libraries(test_utils zip)
+    target_link_libraries(test_utils cjson)
+    target_link_libraries(test_utils cyaml)
+
+    add_test(
+            NAME "utils - is_contained_in_file"
+            COMMAND $<TARGET_FILE:test_utils> "is_contained_in_file")
+    add_test(
+            NAME "utils - trim"
+            COMMAND $<TARGET_FILE:test_utils> "trim")
+    add_test(
+            NAME "utils - to_snake_case"
+            COMMAND $<TARGET_FILE:test_utils> "to_snake_case")
+    add_test(
+            NAME "utils - is_file_exist"
+            COMMAND $<TARGET_FILE:test_utils> "is_file_exist")
+    add_test(
+            NAME "utils - is_endwith"
+            COMMAND $<TARGET_FILE:test_utils> "is_endwith")
+    add_test(
+            NAME "utils - progress_formatter"
+            COMMAND $<TARGET_FILE:test_utils> "progress_formatter")
+
+endif ()
