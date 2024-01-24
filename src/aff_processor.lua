@@ -286,10 +286,17 @@ local function process(cmd)
 
         if args[9] == "" then
             args[9] = "none";
-        end
-
-        for wav in string.gmatch(args[9], "(.*)_wav") do
-            if wav ~= nil then
+        elseif string.match(args[9], "(.*)_wav") == nil and
+                string.match(args[9], "(.*).wav") == nil then
+            local wav_file = io.open(out_proj_path .. args[9] .. ".wav", "r");
+            if wav_file then
+                io.close(wav_file);
+            else
+                args[9] = "none";
+            end
+        elseif string.match(args[9], "(.*)_wav") ~= nil then
+            local wav = string.match(args[9], "(.*)_wav")
+            if wav == nil then
                 :: continue ::
             end
 
@@ -299,11 +306,9 @@ local function process(cmd)
             else
                 args[9] = "none";
             end
-            break
-        end
-
-        for wav in string.gmatch(args[9], "(.*)%.wav") do
-            if wav ~= nil then
+        elseif string.gmatch(args[9], "(.*)%.wav") ~= nil then
+            local wav = string.match(args[9], "(.*)%.wav")
+            if wav == nil then
                 :: continue ::
             end
 
@@ -314,8 +319,14 @@ local function process(cmd)
             else
                 args[9] = "none";
             end
-            break
+        else
+            args[9] = "none";
         end
+
+        if args[10] ~= nil and args[2] - args[1] == 0 then
+            return invalid_cmd;
+        end
+
         args[3] = string.format("%.2f", args[3]);
         args[4] = string.format("%.2f", args[4]);
         args[6] = string.format("%.2f", args[6]);
