@@ -8,7 +8,7 @@ help: compile
 	../cmake-build-debug/Etoile -h --debug
 
 simulate: compile
-	../cmake-build-debug/Etoile -i /home/freeze-dolphin/Documents/workspace/idea/Etoile/eva/arcpkg/Arcthesia.AntitheEuphoriaHOLiC.arcpkg -o ./songs -b ./img/bg/1080 -p default -f --debug
+	../cmake-build-debug/Etoile -i ./arcpkg/ACC5.NotARCAEA.arcpkg -o ./songs -b ./img/bg/1080 -p accfnarc --force --lua ../src/aff_processor.lua --fix-constant
 
 simulate_multiple: compile
 	../cmake-build-debug/Etoile -i ./arcpkg/ACC5.Standard.arcpkg -o ./songs -b ./img/bg/1080 -p default --force

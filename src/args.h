@@ -56,6 +56,11 @@ static struct cag_option options[] = {
                 .access_name = "fix-constant",
                 .description = "Auto fix constant below 1.0"},
 
+        {.identifier = 'C',
+                .access_letters = NULL,
+                .access_name = "disable-camera",
+                .description = "Disable camera commands"},
+
         {.identifier = 'h',
                 .access_letters = "h",
                 .access_name = "help",

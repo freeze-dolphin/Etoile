@@ -93,12 +93,16 @@ local function get_procedure(cmd)
     if trim(cmd) == "};" then
         return "timinggroupend";
     end
-    local matched = string.match(trim(cmd), "^(.-)%b()");
-    local result = "note";
-    if matched ~= nil then
-        result = matched;
+
+    if string.sub(trim(cmd), 1, 1) == "(" then
+        return "note";
     end
-    return result;
+
+    local matched = string.match(trim(cmd), "^(.-)%b()");
+    if matched ~= nil then
+        return matched;
+    end
+    return nil;
 end
 
 local function break_cmd(procedure, cmd)
@@ -111,7 +115,7 @@ local function break_cmd(procedure, cmd)
             args[2]
         };
 
-        if #args == 4 then
+        if #args == 4 and tonumber(args[3]) ~= nil and tonumber(args[4]) ~= nil then
             table.insert(result, tonumber(args[3]))
             table.insert(result, tonumber(args[4]))
         end
@@ -197,24 +201,29 @@ local function build_timing_group(args, detrim_count)
     return string_repeat(" ", detrim_count) .. "timinggroup" .. "(" .. table.concat(args, "_") .. "){";
 end
 
+local function build_note(args, detrim_count)
+    return string_repeat(" ", detrim_count) .. "(" .. table.concat(args, ",") .. ");";
+end
+
 local function build_arc(args, detrim_count)
+    local basic_args = table.pack(table.unpack(args, 1, 10));
     if args[11] == nil then
-        return build_cmd("arc", table.pack(table.unpack(args, 1, 10)), "", detrim_count);
+        return build_cmd("arc", basic_args, "", detrim_count);
     end
     local taps = {};
     for _, v in ipairs(args[11]) do
         table.insert(taps, "arctap(" .. tostring(v) .. ")");
     end
     local extra = "[" .. table.concat(taps, ",") .. "]";
-    return build_cmd("arc", table.pack(table.unpack(args, 1, 10)), extra, detrim_count);
+    return build_cmd("arc", basic_args, extra, detrim_count);
 end
-
-local flag_property = false;
 
 local available_sc_commands = { "trackhide", "trackshow", "trackdisplay", "redline", "arcahvdistort", "arcahvdebris",
                                 "hidegroup", "enwidencamera", "enwidenlanes" }
 
-local invalid_cmd = "###invalid###";
+local invalid_cmd = "###invalid_sc###";
+
+flag_property = false;
 
 arc_color_conv_cnt = 0;
 invalid_sc_conv_cnt = 0;
@@ -234,18 +243,34 @@ local function process(cmd)
         local args, detrim_count = break_cmd(procedure, cmd);
         assert(args ~= nil);
 
+        if args[3] == 0 then
+            args[3] = 1;
+        end
+
         -- force parameter 2 and 3 to be '%.2f' formatted
-        args[2] = string.format("%.2f", tostring(args[2]));
-        args[3] = string.format("%.2f", tostring(args[3]));
+        args[2] = string.format("%.2f", args[2]);
+        args[3] = string.format("%.2f", args[3]);
 
         return build_cmd(procedure, args, "", detrim_count);
+    elseif procedure == "note" then
+        local args, detrim_count = break_cmd(procedure, cmd);
+        assert(args ~= nil);
+
+        if math.tointeger(args[2]) ~= nil then
+            if args[2] < 0 or args[2] > 5 then
+                return invalid_cmd;
+            end
+        end
+
+        return build_note(args, detrim_count);
     elseif procedure == "hold" then
         local args, detrim_count = break_cmd(procedure, cmd);
         assert(args ~= nil);
 
         if math.tointeger(args[3]) ~= nil then
             if args[3] < 0 or args[3] > 5 then
-                args[3] = string.format("%.2f", tostring((args[3] + 0.5) / 2));
+                -- args[3] = string.format("%.2f", (args[3] + 0.5) / 2);
+                return invalid_cmd;
             end
         end
 
@@ -291,22 +316,26 @@ local function process(cmd)
             end
             break
         end
-        args[3] = string.format("%.2f", tostring(args[3]));
-        args[4] = string.format("%.2f", tostring(args[4]));
-        args[6] = string.format("%.2f", tostring(args[6]));
-        args[7] = string.format("%.2f", tostring(args[7]));
+        args[3] = string.format("%.2f", args[3]);
+        args[4] = string.format("%.2f", args[4]);
+        args[6] = string.format("%.2f", args[6]);
+        args[7] = string.format("%.2f", args[7]);
 
         return build_arc(args, detrim_count);
     elseif procedure == "camera" then
+        if flag_no_camera then
+            return invalid_cmd;
+        end
+
         local args, detrim_count = break_cmd(procedure, cmd);
         assert(args ~= nil);
 
-        args[2] = string.format("%.2f", tostring(args[2]));
-        args[3] = string.format("%.2f", tostring(args[3]));
-        args[4] = string.format("%.2f", tostring(args[4]));
-        args[5] = string.format("%.2f", tostring(args[5]));
-        args[6] = string.format("%.2f", tostring(args[6]));
-        args[7] = string.format("%.2f", tostring(args[7]));
+        args[2] = string.format("%.2f", args[2]);
+        args[3] = string.format("%.2f", args[3]);
+        args[4] = string.format("%.2f", args[4]);
+        args[5] = string.format("%.2f", args[5]);
+        args[6] = string.format("%.2f", args[6]);
+        args[7] = string.format("%.2f", args[7]);
 
         return build_cmd(procedure, args, "", detrim_count);
     elseif procedure == "scenecontrol" then
@@ -324,7 +353,7 @@ local function process(cmd)
                 args[3] = args[3] / 1000.0
             end
 
-            args[3] = string.format("%.2f", tostring(args[3]))
+            args[3] = string.format("%.2f", args[3]);
         end
 
         return build_cmd(procedure, args, "", detrim_count);
@@ -342,14 +371,22 @@ local function process(cmd)
             then
                 table.insert(result, v);
             else
-                for x in string.gmatch(v, "anglex=(%d*)") do
-                    if x ~= nil then
-                        table.insert(result, "anglex" .. x);
+                for x in string.gmatch(v, "anglex=(-?%d+)") do
+                    if x ~= nil and tonumber(x) ~= nil then
+                        x = tonumber(x)
+                        if x < 0 then
+                            x = 360 + x;
+                        end
+                        table.insert(result, "anglex" .. math.floor(x * 10));
                     end
                 end
-                for y in string.gmatch(v, "angley=(%d*)") do
-                    if y ~= nil then
-                        table.insert(result, "angley" .. y);
+                for y in string.gmatch(v, "angley=(-?%d+)") do
+                    if y ~= nil and tonumber(y) ~= nil then
+                        y = tonumber(y)
+                        if y < 0 then
+                            y = 360 + y;
+                        end
+                        table.insert(result, "angley" .. math.floor(y * 10));
                     end
                 end
             end
@@ -358,12 +395,15 @@ local function process(cmd)
         invalid_tg_conv_cnt = invalid_tg_conv_cnt + #args - #result;
 
         return build_timing_group(result, detrim_count);
+    elseif procedure == nil then
+        return invalid_cmd;
     end
 
     return cmd;
 end
 
 function exec(aff)
+    flag_property = false;
     arc_color_conv_cnt = 0;
     invalid_sc_conv_cnt = 0;
     invalid_tg_conv_cnt = 0;

@@ -21,7 +21,7 @@ static int lua_print_to_log(lua_State *L) {
 int main(int argc, char *argv[]) {
     const char *path_arcpkg = NULL, *path_songs_dir = NULL, *path_bg_dir = NULL, *s_packname = NULL, *s_version = NULL;
     char *path_lua = NULL;
-    bool flag_dbg = false, flag_force = false, flag_auto_fix_constant = false;
+    bool flag_dbg = false, flag_force = false, flag_auto_fix_constant = false, flag_no_camera = false;
     bool flag_lua = true;
 
     char *s_addition_version = "1.0";
@@ -53,6 +53,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'F':
                 flag_auto_fix_constant = true;
+                break;
+            case 'C':
+                flag_no_camera = true;
                 break;
             case 'h':
                 print_help_msg(true);
@@ -277,12 +280,12 @@ int main(int argc, char *argv[]) {
                     if (proj->charts[j].chart_constant < 1.0) {
                         if (flag_auto_fix_constant) {
                             fprintf(log_file,
-                                    "[WARN] Chart constant of '%s' (from '%s', constant = %lf) is below one. Fixing it to 1.0...\n",
+                                    "[WARN] Chart constant of '%s' (from '%s', constant = %lf) is below one. Fixing it to 0.0...\n",
                                     chart_path,
                                     c_id,
                                     proj->charts[j].chart_constant);
                             fflush(log_file);
-                            proj->charts[j].chart_constant = 1.0F;
+                            proj->charts[j].chart_constant = 0.0F;
                         } else {
                             fprintf(log_file, "[WARN] Chart constant of '%s' (from '%s', constant = %lf) is below one, ignored\n",
                                     chart_path,
@@ -432,6 +435,8 @@ int main(int argc, char *argv[]) {
                                 lua_setglobal(L, "out_proj_path");
                                 lua_pushstring(L, c_dir_snake);
                                 lua_setglobal(L, "c_dir");
+                                lua_pushboolean(L, flag_no_camera);
+                                lua_setglobal(L, "flag_no_camera");
 
                                 lua_getglobal(L, "exec");
                                 if (lua_isnil(L, -1)) {

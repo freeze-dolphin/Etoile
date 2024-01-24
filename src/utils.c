@@ -4,13 +4,14 @@ bool is_file_exist(char *fname) {
     return access(fname, F_OK) == 0;
 }
 
-void remove_char_from_str(char *str, char c) {
-    char *src = str, *dst = str;
-    while (*src) {
-        *dst = *src++;
-        if (*dst != c) dst++;
-    }
-    *dst = '\0';
+void remove_char_from_str(char *s, char c) {
+    unsigned long n = strlen(s);
+    int i, j;
+    for (i = j = 0; i < n; i++)
+        if (s[i] != c)
+            s[j++] = s[i];
+
+    s[j] = '\0';
 }
 
 bool make_dir(const char *path) {
