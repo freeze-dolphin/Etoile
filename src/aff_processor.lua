@@ -323,10 +323,6 @@ local function process(cmd)
             args[9] = "none";
         end
 
-        if args[10] ~= nil and args[2] - args[1] == 0 then
-            return invalid_cmd;
-        end
-
         args[3] = string.format("%.2f", args[3]);
         args[4] = string.format("%.2f", args[4]);
         args[6] = string.format("%.2f", args[6]);
