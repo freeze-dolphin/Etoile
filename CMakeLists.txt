@@ -58,7 +58,7 @@ pkg_check_modules(cjson REQUIRED IMPORTED_TARGET libcjson)
 pkg_check_modules(MagickWand REQUIRED IMPORTED_TARGET MagickWand)
 
 ## lua
-pkg_check_modules(LUA REQUIRED IMPORTED_TARGET lua-5.4)
+pkg_check_modules(lua REQUIRED IMPORTED_TARGET lua-5.4)
 
 # define exec
 add_executable(Etoile
