@@ -9,4 +9,5 @@ valgrind.xml
 
 /cmake-build-release/
 /cmake-build-debug/
-/build/
+/build-lin64/
+/build-win64/
